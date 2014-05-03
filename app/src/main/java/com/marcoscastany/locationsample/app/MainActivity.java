@@ -12,15 +12,23 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class MainActivity extends Activity {
 
     private LocationManager locationManager;
     private String provider;
+    private Location currentLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        ((TextView)findViewById(R.id.longitudValue)).setVisibility(View.INVISIBLE);
+        ((TextView)findViewById(R.id.latitudValue)).setVisibility(View.INVISIBLE);
+        ((TextView)findViewById(R.id.lastUpdate)).setVisibility(View.INVISIBLE);
 
         configureLocation();
     }
@@ -34,18 +42,30 @@ public class MainActivity extends Activity {
         if (locationManager.getAllProviders().contains(LocationManager.GPS_PROVIDER))
             provider = LocationManager.GPS_PROVIDER;
 
+        ((TextView)findViewById(R.id.locationProvider)).setText(provider);
+
         // Define a listener that responds to location updates
         LocationListener locationListener = new LocationListener() {
             public void onLocationChanged(Location location) {
                 // Called when a new location is found by the network location provider.
-                String longitud = String.valueOf(location.getLongitude());
-                String latitud = String.valueOf(location.getLatitude());
+                if (currentLocation != location) {
+                    Date date = new Date();
 
-                ((TextView)findViewById(R.id.longitudValue)).setText(longitud);
-                ((TextView)findViewById(R.id.latitudValue)).setText(latitud);
+                    String longitud = String.valueOf(location.getLongitude());
+                    String latitud = String.valueOf(location.getLatitude());
 
-                 new Server().execute(latitud, longitud);
+                    currentLocation = location;
 
+                    ((TextView) findViewById(R.id.longitudValue)).setText(longitud);
+                    ((TextView) findViewById(R.id.latitudValue)).setText(latitud);
+                    ((TextView) findViewById(R.id.lastUpdate)).setText(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date));
+
+                    ((TextView) findViewById(R.id.longitudValue)).setVisibility(View.VISIBLE);
+                    ((TextView) findViewById(R.id.latitudValue)).setVisibility(View.VISIBLE);
+                    ((TextView) findViewById(R.id.lastUpdate)).setVisibility(View.VISIBLE);
+
+                    new Server().execute(latitud, longitud);
+                }
             }
 
             public void onStatusChanged(String provider, int status, Bundle extras) {}
@@ -77,19 +97,5 @@ public class MainActivity extends Activity {
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    public void startLocationClick(View view) {
-        Button b = (Button)view;
-        String text = b.getText().toString();
-
-        Location location = this.locationManager.getLastKnownLocation(provider);
-        if (location != null) {
-            String longitud = String.valueOf(location.getLongitude());
-            String latitud = String.valueOf(location.getLatitude());
-
-            ((TextView) findViewById(R.id.longitudValue)).setText(longitud);
-            ((TextView) findViewById(R.id.latitudValue)).setText(latitud);
-        }
     }
 }
