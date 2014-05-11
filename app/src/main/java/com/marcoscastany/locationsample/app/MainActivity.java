@@ -6,25 +6,39 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class MainActivity extends Activity {
+public class MainActivity extends FragmentActivity implements CallBackListener {
 
     private LocationManager locationManager;
     private String provider;
     private Location currentLocation;
+    private GoogleMap map;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        map = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
+        map.setMyLocationEnabled(true);
 
         ((TextView)findViewById(R.id.longitudValue)).setVisibility(View.INVISIBLE);
         ((TextView)findViewById(R.id.latitudValue)).setVisibility(View.INVISIBLE);
@@ -64,7 +78,16 @@ public class MainActivity extends Activity {
                     ((TextView) findViewById(R.id.latitudValue)).setVisibility(View.VISIBLE);
                     ((TextView) findViewById(R.id.lastUpdate)).setVisibility(View.VISIBLE);
 
-                    new Server().execute(latitud, longitud);
+                    LatLng loc = new LatLng(location.getLatitude(), location.getLongitude());
+                    CameraUpdate center= CameraUpdateFactory.newLatLng(loc);
+                    CameraUpdate zoom= CameraUpdateFactory.zoomTo(15);
+                    map.moveCamera(center);
+                    map.animateCamera(zoom);
+                    map.addMarker(new MarkerOptions().position(loc).draggable(false));
+
+                    Server server = new Server();
+                    server.setFinalStatus((TextView)findViewById(R.id.networkStatus));
+                    server.execute(latitud, longitud);
                 }
             }
 
@@ -78,7 +101,6 @@ public class MainActivity extends Activity {
         // Register the listener with the Location Manager to receive location updates
         this.locationManager.requestLocationUpdates(provider, 0, 0, locationListener);
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -97,5 +119,10 @@ public class MainActivity extends Activity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void callback(String response) {
+
     }
 }
